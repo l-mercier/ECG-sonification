@@ -2,48 +2,21 @@
 	"patcher" : 	{
 		"fileversion" : 1,
 		"appversion" : 		{
-			"major" : 8,
-			"minor" : 6,
-			"revision" : 5,
+			"major" : 9,
+			"minor" : 0,
+			"revision" : 8,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 321.0, 176.0, 825.0, 671.0 ],
-		"bglocked" : 0,
-		"openinpresentation" : 0,
-		"default_fontsize" : 12.0,
-		"default_fontface" : 0,
-		"default_fontname" : "Arial",
-		"gridonopen" : 1,
+		"rect" : [ 221.0, 178.0, 825.0, 671.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
-		"gridsnaponopen" : 1,
-		"objectsnaponopen" : 1,
-		"statusbarvisible" : 2,
-		"toolbarvisible" : 1,
-		"lefttoolbarpinned" : 0,
-		"toptoolbarpinned" : 0,
-		"righttoolbarpinned" : 0,
-		"bottomtoolbarpinned" : 0,
-		"toolbars_unpinned_last_save" : 0,
-		"tallnewobj" : 0,
-		"boxanimatetime" : 200,
-		"enablehscroll" : 1,
-		"enablevscroll" : 1,
-		"devicewidth" : 0.0,
-		"description" : "",
-		"digest" : "",
-		"tags" : "",
-		"style" : "",
-		"subpatcher_template" : "",
-		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
 					"activebgcolor" : [ 0.156862745098039, 0.156862745098039, 0.156862745098039, 0.0 ],
 					"bgcolor" : [ 0.156862745098039, 0.156862745098039, 0.156862745098039, 0.0 ],
 					"id" : "obj-26",
-					"line_width" : 3.0,
 					"maxclass" : "live.scope~",
 					"numinlets" : 2,
 					"numoutlets" : 1,
@@ -51,7 +24,7 @@
 					"patching_rect" : [ 273.0, 622.0, 210.0, 161.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 275.0, 565.0, 201.0, 71.0 ],
-					"range" : [ 0.0, 1.0 ],
+					"range" : [ -2000.0, 2000.0 ],
 					"samples" : 144000.0
 				}
 
@@ -61,7 +34,7 @@
 					"activebgcolor" : [ 0.156862745098039, 0.156862745098039, 0.156862745098039, 0.0 ],
 					"bgcolor" : [ 0.156862745098039, 0.156862745098039, 0.156862745098039, 0.0 ],
 					"id" : "obj-25",
-					"line_width" : 3.0,
+					"ignoreclick" : 1,
 					"maxclass" : "live.scope~",
 					"numinlets" : 2,
 					"numoutlets" : 1,
@@ -69,8 +42,9 @@
 					"patching_rect" : [ 42.0, 448.0, 210.0, 161.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 10.0, 495.0, 201.0, 71.0 ],
-					"range" : [ 100000.0, 120000.0 ],
-					"samples" : 144000.0
+					"range" : [ 106000.0, 110000.0 ],
+					"samples" : 142956.0,
+					"smooth" : 0
 				}
 
 			}
@@ -174,7 +148,7 @@
 					"patching_rect" : [ 273.0, 448.0, 210.0, 161.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 5.0, 33.5, 201.0, 71.0 ],
-					"range" : [ 50000.0, 70000.0 ],
+					"range" : [ 1000.0, 3000.0 ],
 					"samples" : 144000.0
 				}
 
