@@ -43,6 +43,44 @@ WiFiUDP Udp;
 
 // === Preprocessing functions ===
 
+class AdaptiveNormalizer {
+  private:
+    float buffer[200]; // Fenêtre de 200 échantillons
+    int index = 0;
+    float baselineMin, baselineMax;
+    
+  public:
+    void addSample(float signal) {
+      buffer[index] = signal;
+      index = (index + 1) % 200;
+      
+      // Recalculer baseline tous les 50 échantillons
+      if(index % 50 == 0) updateBaseline();
+    }
+    
+    void updateBaseline() {
+      // Utiliser médiane pour le centre
+      float sorted[200];
+      memcpy(sorted, buffer, 200 * sizeof(float));
+      // ... tri ...
+      
+      float median = sorted[100];
+      float mad = calculateMAD(sorted, median); // Écart absolu médian
+      
+      baselineMin = median - 3 * mad;
+      baselineMax = median + 3 * mad;
+    }
+    
+    float normalize(float signal) {
+      // Centrer autour de la baseline
+      float centered = signal - (baselineMin + baselineMax) / 2;
+      float range = (baselineMax - baselineMin) / 2;
+      
+      return constrain(centered / range, -1, 1);
+    }
+};
+
+
 void meanRemoval(float* signal, int len) {
   float sum = 0;
   for (int i = 0; i < len; i++) sum += signal[i];
@@ -136,9 +174,6 @@ void connectToWiFi() {
     while (true); // Stop execution
   }
 }
-
-
-
 
 // === Sensor & Processing Setup ===
 
