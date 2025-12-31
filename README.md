@@ -4,7 +4,7 @@ This is the firmware for an Arduino Nano-based project that uses an infrared hea
 
 ### quick start
 
-* Download and install Arduino IDE from [energia.nu/download/](http://energia.nu/download/).
+* Download and install Arduino IDE
 * install required libraries (<WiFi.h>, <WiFiUdp.h>, <OSCMessage.h>, <Wire.h>, "MAX30105.h")
 
 
@@ -46,4 +46,4 @@ For more information, please visit :
 ### credits
 
 by Léo Mercier
-heavily inspired by Emmanuel Flety's Riot, developped at Ircam.
+heavily inspired by Emmanuel Flety's [Riot](https://github.com/ircam-ismm/riot-v3), developped at Ircam.
