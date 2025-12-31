@@ -4,8 +4,93 @@
 #include <Wire.h>
 #include "MAX30105.h"
 #include "heartRate.h"
+#include "heartRateAdvanced.h"
+
+// Sctructure of the OSC message :   IR value (f), Filtered IR value (f), normalized value, (f) temperature (f), beat Detected (0, 1)
+
+class AdaptiveNormalizer {
+  private:
+    float buffer[200];
+    int index = 0;
+    float baselineMin = 100000;
+    float baselineMax = 110000;
+    bool initialized = false;
+    
+    // Fonction de comparaison pour qsort
+    static int compareFloat(const void* a, const void* b) {
+      float diff = (*(float*)a - *(float*)b);
+      if (diff < 0) return -1;
+      if (diff > 0) return 1;
+      return 0;
+    }
+    
+    float calculateMAD(float* sorted, float median) {
+      float deviations[200];
+      for(int i = 0; i < 200; i++) {
+        deviations[i] = abs(sorted[i] - median);
+      }
+      qsort(deviations, 200, sizeof(float), compareFloat);
+      return deviations[100]; // Médiane des déviations
+    }
+    
+  public:
+    AdaptiveNormalizer() {
+      // Initialiser le buffer avec des valeurs moyennes
+      for(int i = 0; i < 200; i++) {
+        buffer[i] = 105000;
+      }
+    }
+    
+    void addSample(float signal) {
+      buffer[index] = signal;
+      index = (index + 1) % 200;
+      
+      // Marquer comme initialisé après le premier tour complet
+      if(index == 0) initialized = true;
+      
+      // Recalculer baseline tous les 50 échantillons
+      if(index % 50 == 0 && initialized) {
+        updateBaseline();
+      }
+    }
+    
+    void updateBaseline() {
+      float sorted[200];
+      memcpy(sorted, buffer, 200 * sizeof(float));
+      qsort(sorted, 200, sizeof(float), compareFloat);
+      
+      float median = sorted[100];
+      float mad = calculateMAD(sorted, median);
+      
+      // Éviter une plage trop petite
+      if(mad < 50) mad = 50;
+      
+      baselineMin = median - 3 * mad;
+      baselineMax = median + 3 * mad;
+    }
+    
+    float normalize(float signal) {
+      float center = (baselineMin + baselineMax) / 2.0;
+      float range = (baselineMax - baselineMin) / 2.0;
+      
+      if(range < 10) range = 10; // Sécurité
+      
+      float normalized = (signal - center) / range;
+      return constrain(normalized, -1.0, 1.0);
+    }
+    
+    // Fonction utilitaire pour voir les bornes actuelles
+    void printBaseline() {
+      Serial.print("Baseline Min: ");
+      Serial.print(baselineMin);
+      Serial.print(" | Max: ");
+      Serial.println(baselineMax);
+    }
+};
 
 MAX30105 particleSensor;
+AdaptiveNormalizer normalizer;
+HeartRateDetector hrDetector;
 
 
 const int bufferSize = 256;
@@ -42,44 +127,6 @@ const int localPort = 12345;            // Port to send from
 WiFiUDP Udp;
 
 // === Preprocessing functions ===
-
-class AdaptiveNormalizer {
-  private:
-    float buffer[200]; // Fenêtre de 200 échantillons
-    int index = 0;
-    float baselineMin, baselineMax;
-    
-  public:
-    void addSample(float signal) {
-      buffer[index] = signal;
-      index = (index + 1) % 200;
-      
-      // Recalculer baseline tous les 50 échantillons
-      if(index % 50 == 0) updateBaseline();
-    }
-    
-    void updateBaseline() {
-      // Utiliser médiane pour le centre
-      float sorted[200];
-      memcpy(sorted, buffer, 200 * sizeof(float));
-      // ... tri ...
-      
-      float median = sorted[100];
-      float mad = calculateMAD(sorted, median); // Écart absolu médian
-      
-      baselineMin = median - 3 * mad;
-      baselineMax = median + 3 * mad;
-    }
-    
-    float normalize(float signal) {
-      // Centrer autour de la baseline
-      float centered = signal - (baselineMin + baselineMax) / 2;
-      float range = (baselineMax - baselineMin) / 2;
-      
-      return constrain(centered / range, -1, 1);
-    }
-};
-
 
 void meanRemoval(float* signal, int len) {
   float sum = 0;
@@ -150,7 +197,6 @@ float bandpassFilter(float input, float dt) {
   return bp;
 }
 
-
 void connectToWiFi() {
   Serial.print("Connecting to WiFi: ");
   Serial.println(ssid);
@@ -200,61 +246,58 @@ void setup() {
 // Main loop //
 
 void loop() {
-
   const float dt = 1.0 / sampleRate;  // 1000 Hz sampling rate
 
-
-  // Shift all values left (drop oldest)
-  for (int i = 0; i < bufferSize - 1; i++) {
-    buffer[i] = buffer[i + 1];
-  }
-
-  // Add new IR sample
+  // 1. UNE SEULE lecture du capteur
   uint32_t irValue = particleSensor.getIR();
-  buffer[bufferSize - 1] = irValue;
+  float signal = (float)irValue;
+  
+  // 2. Normalisation adaptative
+  normalizer.addSample(signal);
+  float normalizedValue = normalizer.normalize(signal);
+  
+  // 3. Filtrage bandpass
+  float filteredIR = bandpassFilter(signal, dt);
 
-  // Beat detection (returns true if a beat is detected)
-  bool beatDetected = checkForBeat(irValue);
+  // 4. Beat detection
+  // bool beatDetected = checkForBeat(irValue);
 
-  // Read temperature
-  float temperature = particleSensor.readTemperature();
+  bool beatDetected = hrDetector.detectBeat(normalizedValue);
 
-  sampleCounter++;
+  // Bonus: vous pouvez maintenant obtenir le BPM et la confiance
+  float bpm = hrDetector.getBPM();
+  float confidence = hrDetector.getConfidence();
 
-  // Preprocess every N samples if you want (currently every sample)
-  if (sampleCounter >= processEveryNSamples) {
-    sampleCounter = 0;
-
-    float tempBuffer[bufferSize];
-    memcpy(tempBuffer, buffer, sizeof(buffer));
-
-    // meanRemoval(tempBuffer, bufferSize);
-    // amplitudeNormalization(tempBuffer, bufferSize);
-    // movingAverageFilter(tempBuffer, bufferSize, 4);
-
-    lastFilteredIR = tempBuffer[bufferSize - 1];
-
-    lastFilteredIR = bandpassFilter((float)irValue, dt);
-
-    // You can still print or debug if you want:
-    Serial.print("IR: "); Serial.print(irValue);
-    Serial.print(" | Filtered IR: "); Serial.println(lastFilteredIR);
-    Serial.print(" | Temp: "); Serial.print(temperature);
-    Serial.print(" | Beat: "); Serial.println(beatDetected);
+  // 5. Température (MOINS SOUVENT - c'est lent!)
+  static int tempCounter = 0;
+  static float temperature = 0;
+  if (tempCounter++ >= 100) { // Une fois toutes les 100 lectures
+    temperature = particleSensor.readTemperature();
+    tempCounter = 0;
   }
 
-  // Send OSC message with three values: raw IR, temperature, beatDetected
-  OSCMessage msg("/ecg");
+  // Debug
+  static int debugCounter = 0;
+  if (debugCounter++ >= 200) {
+    Serial.print("IR: "); Serial.print(irValue);
+    Serial.print(" | Normalized: "); Serial.print(normalizedValue);
+    Serial.print(" | BPM: "); Serial.print(bpm);
+    Serial.print(" | Confidence: "); Serial.print(confidence * 100);
+    Serial.print("% | Threshold: "); Serial.println(hrDetector.getThreshold());
+    debugCounter = 0;
+  }
 
+  // Envoi OSC
+  OSCMessage msg("/ecg");
   msg.add((int32_t)irValue);
-  msg.add(lastFilteredIR);
-  msg.add(temperature);         // float value
-  msg.add((int32_t)beatDetected); // OSC has no boolean, so use int 0 or 1
+  msg.add(normalizedValue);
+  msg.add(temperature);
+  msg.add((int32_t)beatDetected);
+  msg.add(bpm);
+  msg.add(confidence);
 
   Udp.beginPacket(destIP, destPort);
   msg.send(Udp);
   Udp.endPacket();
   msg.empty();
-
-  // delay(1); // ~1000Hz sampling
 }
