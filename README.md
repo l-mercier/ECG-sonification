@@ -2,50 +2,54 @@
 
 In this repo you'll find the firmware for an Arduino Nano-based project that uses an infrared DIY sensor (MAX30102 by Sparkfun but MAX30105 also works), sends the data via OSC (WiFi, UDP) to a network and can be read by a software. The application here was to modulate sound in real-time with the heart signal (using Max4Live). It appeared that this sensor can also detect approaching movement from a close distance, which opens up for other applications.
 
-### Hardware setup
+## Hardware setup
 
 See hardware.pdf
+Tested on : arduino nano esp32, (adafruit feather V2), esp32-C3 super mini dev kit (is super mini but gets super hot).
 
 Hardware Connections (Breakoutboard to Arduino): 
 -5V = 5V (3.3V is allowed) 
 -GND = GND 
--SDA = A4 (or SDA) 
--SCL = A5 (or SCL) 
+-SDA = A4 (or SDA)
+-SCL = A5 (or SCL)
 -INT = Not connected
 
-### Quick start
+## Quick start
 
 * Download and install Arduino IDE
 * install required libraries (<WiFi.h>, <WiFiUdp.h>, <OSCMessage.h>, <Wire.h>, "MAX30105.h")
 
-#### Network config
+## Network config
 
 Inside the .ino file, you'll find a series of parameters that are used to set the network to which to ESP-32 will connect, as well as OSC ports and destination.
 
-Tips : use a dedicated router to generate the network and distribute IP addresses inside a DHCP range (more robust for real-word applications / multiple sensors at the same time).  
+---
+Tips : use a dedicated router to generate the network and distribute IP addresses inside a DHCP range (more robust for real-word applications / multiple sensors at the same time). 
+ 
+---
 
-WiFi configuration :
+### WiFi configuration :
 
-const char* ssid = "your-ssid";
-const char* password = "your-password";
+* const char* ssid = "your-ssid"
+* const char* password = "your-password"
 
-IPAddress local_IP(10, 10, 0, 150) (Must be inside DHCP range and different from destIP)
-IPAddress gateway(10, 10, 0, 254) (static address of your router)
-IPAddress subnet(255, 255, 0, 0)
-IPAddress primaryDNS(8, 8, 8, 8)
-IPAddress secondaryDNS(1, 1, 1, 1)
+* IPAddress local_IP(10, 10, 0, 150) (Must be inside DHCP range and different from destIP)
+* IPAddress gateway(10, 10, 0, 254) (static address of your router)
+* IPAddress subnet(255, 255, 0, 0)
+* IPAddress primaryDNS(8, 8, 8, 8)
+* IPAddress secondaryDNS(1, 1, 1, 1)
 
-OSC destination :
+### OSC destination :
 
 const char* destIP = "10.10.0.1" (Static address for you computer (adjust if needed))
 const int destPort = 8000;       (Receiving port)
 const int localPort = 12345;     (Port to send from)
 
-#### upload
+## upload
 
 * Upload code to your ESP-32 board
 
-### going further
+## going further
 
 You can receive the data in a wide range of OSC enabled apps : 
 Max/MSP, MAx4live, TouchDesigner, to only name those...
@@ -54,7 +58,7 @@ You'll find example MAX & M4L patches attached.
 
 For more information, please visit : 
 
-### credits
+## credits
 
 by Léo Mercier
 heavily inspired by Emmanuel Flety's [Riot](https://github.com/ircam-ismm/riot-v3), developped at Ircam.

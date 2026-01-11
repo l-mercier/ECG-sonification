@@ -6,7 +6,7 @@
 #include "heartRate.h"
 #include "heartRateAdvanced.h"
 
-// Sctructure of the OSC message :   IR value (f), Filtered IR value (f), normalized value, (f) temperature (f), beat Detected (0, 1)
+// Structure of the OSC message :   IR value (f), Filtered IR value (f), normalized value, (f) temperature (f), beat Detected (0, 1)
 
 class AdaptiveNormalizer {
   private:
